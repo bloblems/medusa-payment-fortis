@@ -1,0 +1,57 @@
+name: CI
+
+# Runs on direct pushes to main and on PRs targeting main.
+#
+# Note: this uses `pull_request`, NOT `pull_request_target`. PRs from forks
+# run in a sandboxed context with no repo secrets — the safer default.
+# `pull_request_target` is what the Shai-Hulud npm worm exploited to extract
+# OIDC tokens; we deliberately avoid it.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel superseded runs on the same ref to avoid wasted minutes.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Drop default permissions to read-only; nothing in this workflow needs write.
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build & typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.10.0
+          run_install: false
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build (tsc)
+        run: pnpm build
+
+      - name: Verify dist artifacts
+        run: |
+          test -f dist/index.js
+          test -f dist/index.d.ts
+          test -f dist/services/fortis-payment-provider.js
+          test -f dist/storefront/index.js
+          echo "dist artifacts present"
