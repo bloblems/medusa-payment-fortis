@@ -86,19 +86,26 @@ function wrapDataPayload(
   data: Record<string, unknown>,
   iframeOptions: PayFormIframeOptions,
 ): Record<string, unknown> {
-  const envelope: Record<string, unknown> = {
-    [envelopeKey]: {
-      location_id: options.locationId,
-      ...data,
-    },
+  // Per Fortis docs, `stylesheet_url` belongs INSIDE the transaction/account_vault
+  // object, not at the top level of the envelope. Iframe-behavior flags
+  // (parent_send_message, parent_close, redirect_*) stay at the top level.
+  const { stylesheet_url: iframeStylesheet, ...iframeRest } = iframeOptions
+  const stylesheetUrl = iframeStylesheet ?? options.stylesheetUrl
+
+  const inner: Record<string, unknown> = {
+    location_id: options.locationId,
+    ...data,
+  }
+  if (stylesheetUrl) {
+    inner.stylesheet_url = stylesheetUrl
+  }
+
+  return {
+    [envelopeKey]: inner,
     // Default postMessage on; consumer can disable by passing parent_send_message: 0
-    parent_send_message: iframeOptions.parent_send_message ?? 1,
-    ...iframeOptions,
+    parent_send_message: iframeRest.parent_send_message ?? 1,
+    ...iframeRest,
   }
-  if (options.stylesheetUrl && !iframeOptions.stylesheet_url) {
-    envelope.stylesheet_url = options.stylesheetUrl
-  }
-  return envelope
 }
 
 function buildIframeUrl({ options, formPath, data, now }: BuildIframeUrlInput): string {

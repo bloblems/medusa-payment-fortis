@@ -20,19 +20,24 @@ function buildAccountFormUrl(options, data, iframeOptions = {}, now) {
     });
 }
 function wrapDataPayload(options, envelopeKey, data, iframeOptions) {
-    const envelope = {
-        [envelopeKey]: {
-            location_id: options.locationId,
-            ...data,
-        },
-        // Default postMessage on; consumer can disable by passing parent_send_message: 0
-        parent_send_message: iframeOptions.parent_send_message ?? 1,
-        ...iframeOptions,
+    // Per Fortis docs, `stylesheet_url` belongs INSIDE the transaction/account_vault
+    // object, not at the top level of the envelope. Iframe-behavior flags
+    // (parent_send_message, parent_close, redirect_*) stay at the top level.
+    const { stylesheet_url: iframeStylesheet, ...iframeRest } = iframeOptions;
+    const stylesheetUrl = iframeStylesheet ?? options.stylesheetUrl;
+    const inner = {
+        location_id: options.locationId,
+        ...data,
     };
-    if (options.stylesheetUrl && !iframeOptions.stylesheet_url) {
-        envelope.stylesheet_url = options.stylesheetUrl;
+    if (stylesheetUrl) {
+        inner.stylesheet_url = stylesheetUrl;
     }
-    return envelope;
+    return {
+        [envelopeKey]: inner,
+        // Default postMessage on; consumer can disable by passing parent_send_message: 0
+        parent_send_message: iframeRest.parent_send_message ?? 1,
+        ...iframeRest,
+    };
 }
 function buildIframeUrl({ options, formPath, data, now }) {
     const timestamp = Math.floor((now?.() ?? Date.now()) / 1000).toString();
