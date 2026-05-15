@@ -1,6 +1,6 @@
 {
   "name": "medusa-payment-fortis",
-  "version": "0.0.1",
+  "version": "0.1.1",
   "description": "Fortis payment provider for MedusaJS 2.x",
   "author": "Bloblems",
   "license": "MIT",
@@ -34,7 +34,6 @@
     "dev": "tsc --watch",
     "clean": "rm -rf dist",
     "smoke": "node scripts/smoke-test.js",
-    "prepare": "npm run build",
     "prepublishOnly": "npm run clean && npm run build"
   },
   "peerDependencies": {

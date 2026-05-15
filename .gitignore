@@ -1,7 +1,10 @@
 node_modules
-dist
 *.log
 .DS_Store
+
+# dist/ is committed so GitHub-installed consumers don't need to run a
+# prepare-time build. Pre-publishing to npm via `pnpm prepublishOnly` will
+# clean + rebuild it before any release.
 
 .env
 .env.local
